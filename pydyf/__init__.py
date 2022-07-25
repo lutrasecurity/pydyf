@@ -97,6 +97,11 @@ class Stream(Object):
         #: Compress the stream data if set to ``True``. Default is ``False``.
         self.compress = compress
 
+    def begin_tag(self, tag_name, mcid):
+        """Begin a tagged object."""
+        self.stream.append(
+            b'/' + _to_bytes(tag_name) + b' << /MCID ' + _to_bytes(mcid) + b' >> BDC\n')
+
     def begin_text(self):
         """Begin a text object."""
         self.stream.append(b'BT')
@@ -171,6 +176,10 @@ class Stream(Object):
     def end(self):
         """End path without filling or stroking."""
         self.stream.append(b'n')
+
+    def end_tag(self):
+        """Begin a tagged object."""
+        self.stream.append(b'EMC\n')
 
     def end_text(self):
         """End text object."""
@@ -402,6 +411,24 @@ class Array(Object, list):
     def data(self):
         result = [b'[']
         for child in self:
+            result.append(_to_bytes(child))
+        result.append(b']')
+        return b' '.join(result)
+
+class NumberedArray(Array):
+    """PDF Array object.
+
+    Inherits from :class:`Array`.
+
+    """
+    def __init__(self, array=None):
+        super().__init__(array)
+
+    @property
+    def data(self):
+        result = [b'[']
+        for index, child in enumerate(self):
+            result.append(_to_bytes(index))
             result.append(_to_bytes(child))
         result.append(b']')
         return b' '.join(result)
